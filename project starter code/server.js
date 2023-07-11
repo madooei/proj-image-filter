@@ -7,6 +7,9 @@ const app = express();
 // Set the network port
 const port = process.env.PORT || 8082;
 
+// Toggle this flag to print console.log messages
+export const DEBUG = false;
+
 // Use the express.json middleware for post requests
 app.use(express.json());
 
