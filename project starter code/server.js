@@ -1,14 +1,20 @@
 import express from "express";
-import { filterImageFromURL, deleteLocalFiles } from "./util/util.js";
+import {
+  isValidUrl,
+  filterImageFromURL,
+  deleteLocalFiles,
+} from "./util/util.js";
+import ApiError from "./util/ApiError.js";
+import path from "path";
+
+// Toggle this flag to print console.log messages
+export const DEBUG = true;
 
 // Init the Express application
 const app = express();
 
 // Set the network port
 const port = process.env.PORT || 8082;
-
-// Toggle this flag to print console.log messages
-export const DEBUG = false;
 
 // Use the express.json middleware for post requests
 app.use(express.json());
@@ -29,12 +35,61 @@ app.use(express.json());
 
 /**************************************************************************** */
 
+app.get("/filteredimage", async (req, res, next) => {
+  let filteredImagePath = "";
+  try {
+    const { image_url } = req.query;
+
+    if (!image_url || !isValidUrl(image_url)) {
+      throw new ApiError(
+        400,
+        "Provide a valid `image_url`: URL of a publicly accessible image"
+      );
+    }
+
+    filteredImagePath = await filterImageFromURL(image_url);
+    DEBUG &&
+      console.log(
+        "🚀 ~ file: server.js:52 ~ app.get ~ filteredImagePath:",
+        filteredImagePath
+      );
+
+    res.sendFile(path.resolve(filteredImagePath), (err) => {
+      if (err) {
+        next(new ApiError(500, err.message));
+      }
+    });
+  } catch (err) {
+    next(err);
+  } finally {
+    DEBUG &&
+      console.log(
+        "🚀 ~ file: server.js:66 ~ app.get ~ Clean up files in finally block.."
+      );
+    res.on("finish", async () => {
+      if (filteredImagePath) {
+        await deleteLocalFiles([path.resolve(filteredImagePath)]);
+      }
+    });
+  }
+});
+
 //! END @TODO1
 
 // Root Endpoint
 // Displays a simple message to the user
 app.get("/", async (req, res) => {
   res.send("try GET /filteredimage?image_url={{}}");
+});
+
+// Error handling middleware functionality
+app.use((error, request, response, next) => {
+  DEBUG && console.log("🚀 ~ file: server.js:86 ~ app.use ~ error:", error);
+  const code = error.status || 500;
+  response.status(code).json({
+    status: code,
+    message: error.message || `Internal Server Error!`,
+  });
 });
 
 // Start the Server
