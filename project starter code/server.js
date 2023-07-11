@@ -8,7 +8,7 @@ import ApiError from "./util/ApiError.js";
 import path from "path";
 
 // Toggle this flag to print console.log messages
-export const DEBUG = true;
+export const DEBUG = false;
 
 // Init the Express application
 const app = express();
