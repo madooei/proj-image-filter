@@ -2,6 +2,7 @@ import fs from "fs";
 import Jimp from "jimp";
 import { URL } from "url";
 import { DEBUG } from "../server.js";
+import ApiError from "./ApiError.js";
 
 // isValidUrl
 // helper function to check if a url is valid
@@ -41,7 +42,12 @@ export async function filterImageFromURL(inputURL) {
           resolve(outpath);
         });
     } catch (error) {
-      reject(error);
+      DEBUG &&
+        console.log(
+          "🚀 ~ file: util.js:47 ~ filterImageFromURL ~ error:",
+          error
+        );
+      reject(new ApiError(422, "The image could not be processed!"));
     }
   });
 }
@@ -53,6 +59,8 @@ export async function filterImageFromURL(inputURL) {
 //    files: Array<string> an array of absolute paths to files
 export async function deleteLocalFiles(files) {
   for (let file of files) {
+    DEBUG &&
+      console.log("🚀 ~ file: util.js:63 ~ deleteLocalFiles ~ file:", file);
     fs.unlinkSync(file);
   }
 }
